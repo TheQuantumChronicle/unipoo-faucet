@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// App.js
+import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import FaucetBalance from './components/FaucetBalance';
@@ -25,11 +26,7 @@ function App() {
   const [isWhitelisted, setIsWhitelisted] = useState(false);
   const [currentTask, setCurrentTask] = useState(1);
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
-
   const [captchaToken, setCaptchaToken] = useState('');
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [isCaptchaReady, setIsCaptchaReady] = useState(false);
-  const hcaptchaRef = useRef(null);
 
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const rpcUrl = process.env.REACT_APP_RPC_URL;
@@ -61,40 +58,6 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
-  const checkUserData = useCallback(async () => {
-    if (contract && account) {
-      try {
-        const user = await contract.users(account);
-        const lastClaimTime = Number(user.lastClaimTime);
-        const remaining = calculateRemainingTime(lastClaimTime);
-        setRemainingTime(remaining);
-        setIsWhitelisted(user.isWhitelisted);
-
-        const filter = contract.filters.Withdraw(account);
-        const events = await contract.queryFilter(filter, 0, 'latest');
-        const claimsCount = events.length;
-        setClaimedTimes(claimsCount);
-
-        const totalContributedWei = user.totalContributed;
-        const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
-        setTotalContributed(totalContributedEth);
-
-        if (claimsCount >= 7) {
-          if (parseFloat(totalContributedEth) >= 0.1) {
-            setCurrentTask(3);
-          } else {
-            setCurrentTask(2);
-          }
-        } else {
-          setCurrentTask(1);
-        }
-      } catch (error) {
-        console.error('Error checking user data:', error);
-        setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
-      }
-    }
-  }, [contract, account]);
-
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
@@ -116,15 +79,12 @@ function App() {
               setContract(_contract);
               setNetworkError(false);
               setErrorMessage(null);
-
-              await checkUserData();
             } else {
               setNetworkError(true);
               setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
             }
           }
         } catch (error) {
-          console.error('Error loading blockchain data:', error);
           setErrorMessageWithTimeout('Failed to load blockchain data.');
           setNetworkError(true);
         }
@@ -136,7 +96,44 @@ function App() {
     };
 
     checkIfWalletConnected();
-  }, [checkUserData]);
+  }, []);
+
+  useEffect(() => {
+    const checkUserData = async () => {
+      if (contract && account) {
+        try {
+          const user = await contract.users(account);
+          const lastClaimTime = Number(user.lastClaimTime);
+          const remaining = calculateRemainingTime(lastClaimTime);
+          setRemainingTime(remaining);
+          setIsWhitelisted(user.isWhitelisted);
+
+          const filter = contract.filters.Withdraw(account);
+          const events = await contract.queryFilter(filter, 0, 'latest');
+          const claimsCount = events.length;
+          setClaimedTimes(claimsCount);
+
+          const totalContributedWei = user.totalContributed;
+          const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
+          setTotalContributed(totalContributedEth);
+
+          if (claimsCount >= 7) {
+            if (parseFloat(totalContributedEth) >= 0.1) {
+              setCurrentTask(3);
+            } else {
+              setCurrentTask(2);
+            }
+          } else {
+            setCurrentTask(1);
+          }
+        } catch (error) {
+          setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
+        }
+      }
+    };
+
+    checkUserData();
+  }, [contract, account]);
 
   const switchToUnichainSepolia = async () => {
     if (!window.ethereum) {
@@ -153,7 +150,6 @@ function App() {
       });
       setNetworkError(false);
       setErrorMessage(null);
-      await checkUserData();
     } catch (error) {
       if (error.code === 4902) {
         try {
@@ -175,13 +171,10 @@ function App() {
           });
           setNetworkError(false);
           setErrorMessage(null);
-          await checkUserData();
         } catch (addError) {
-          console.error('Failed to add the chain:', addError);
           setErrorMessageWithTimeout('Failed to add the Unichain Sepolia network.');
         }
       } else {
-        console.error('Failed to switch network:', error);
         setErrorMessageWithTimeout('Failed to switch to the Unichain Sepolia network.');
       }
     }
@@ -205,14 +198,11 @@ function App() {
           setContract(_contract);
           setNetworkError(false);
           setErrorMessage(null);
-
-          await checkUserData();
         } else {
           setNetworkError(true);
           setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
         }
       } catch (error) {
-        console.error('Error connecting to wallet:', error);
         setErrorMessageWithTimeout('Failed to connect wallet. Please try again.');
       }
     } else {
@@ -229,7 +219,6 @@ function App() {
         });
         await connectWallet();
       } catch (error) {
-        console.error('Error changing wallet:', error);
         setErrorMessageWithTimeout('Failed to change wallet.');
       }
     } else {
@@ -269,10 +258,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    checkUserData();
-  }, [contract, account, checkUserData]);
-
-  useEffect(() => {
     if (remainingTime > 0) {
       const interval = setInterval(() => {
         setRemainingTime((prev) => {
@@ -294,7 +279,6 @@ function App() {
     }
   }, [twitterConfirmed, currentTask]);
 
-  // **Contribute to Faucet**
   const contributeToFaucet = async () => {
     setErrorMessage(null);
     setSuccessMessageContribute(null);
@@ -326,9 +310,12 @@ function App() {
       triggerSuccessAnimation();
 
       setContributeAmount('');
-      await checkUserData();
+      const userData = await contract.users(account);
+      setIsWhitelisted(userData.isWhitelisted);
+      const totalContributedWei = userData.totalContributed;
+      const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
+      setTotalContributed(totalContributedEth);
     } catch (error) {
-      console.error('Contribution failed:', error);
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Contribution failed: ${errorMsg}`);
       triggerFailureAnimation();
@@ -337,7 +324,6 @@ function App() {
     }
   };
 
-  // **Claim ETH from Faucet**
   const claimETH = async () => {
     setErrorMessage(null);
     setSuccessMessageClaim(null);
@@ -353,23 +339,10 @@ function App() {
       return;
     }
 
-    if (hcaptchaRef.current && isCaptchaReady) {
-      hcaptchaRef.current.execute();
-    } else {
-      setErrorMessageWithTimeout('hCaptcha is not ready yet. Please wait a moment.');
+    if (!captchaToken) {
+      setErrorMessageWithTimeout('Please complete the hCaptcha.');
+      return;
     }
-  };
-
-  const handleContributeAmountChange = (e) => {
-    const value = e.target.value;
-    if (/^\d*\.?\d{0,4}$/.test(value)) {
-      setContributeAmount(value);
-    }
-  };
-
-  const handleCaptchaVerify = async (token) => {
-    setCaptchaToken(token);
-    setIsCaptchaVerified(true);
 
     try {
       setIsClaiming(true);
@@ -380,11 +353,17 @@ function App() {
       triggerSuccessAnimation();
 
       setCaptchaToken('');
-      setIsCaptchaVerified(false);
 
-      await checkUserData();
+      const user = await contract.users(account);
+      const lastClaimTime = Number(user.lastClaimTime);
+      const remaining = calculateRemainingTime(lastClaimTime);
+      setRemainingTime(remaining);
+
+      const filter = contract.filters.Withdraw(account);
+      const events = await contract.queryFilter(filter, 0, 'latest');
+      const claimsCount = events.length;
+      setClaimedTimes(claimsCount);
     } catch (error) {
-      console.error('Error claiming ETH:', error);
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
       triggerFailureAnimation();
@@ -393,19 +372,23 @@ function App() {
     }
   };
 
+  const handleContributeAmountChange = (e) => {
+    const value = e.target.value;
+    if (/^\d*\.?\d{0,4}$/.test(value)) {
+      setContributeAmount(value);
+    }
+  };
+
+  const handleCaptchaVerify = (token) => {
+    setCaptchaToken(token);
+  };
+
   const handleCaptchaExpire = () => {
     setCaptchaToken('');
-    setIsCaptchaVerified(false);
   };
 
   const handleCaptchaError = (err) => {
-    console.error('hCaptcha Error:', err);
     setErrorMessageWithTimeout('hCaptcha failed to load. Please refresh the page.');
-  };
-
-  const handleCaptchaLoad = () => {
-    console.log('hCaptcha loaded');
-    setIsCaptchaReady(true);
   };
 
   const triggerSuccessAnimation = () => {
@@ -413,7 +396,7 @@ function App() {
       setAnimationClass('success-animation');
       setTimeout(() => {
         setAnimationClass('');
-      }, 5000); 
+      }, 5000);
     }
   };
 
@@ -473,11 +456,23 @@ function App() {
               </div>
             )}
 
-            <div className="main-content">
+            <div className="main-content centered-content">
+              <div className="captcha-container">
+                <HCaptcha
+                  sitekey={hcaptchaSiteKey}
+                  size="normal"
+                  onVerify={handleCaptchaVerify}
+                  onExpire={handleCaptchaExpire}
+                  onError={handleCaptchaError}
+                />
+              </div>
+
               <button
                 className="claim-btn"
                 onClick={claimETH}
-                disabled={!isWhitelisted || remainingTime > 0 || isClaiming || !isCaptchaReady}
+                disabled={
+                  !isWhitelisted || remainingTime > 0 || isClaiming || !captchaToken
+                }
                 title={
                   !isWhitelisted
                     ? 'Contribute at least 0.01 ETH to get whitelisted'
@@ -486,16 +481,6 @@ function App() {
               >
                 {isClaiming ? 'Claiming...' : 'Claim'}
               </button>
-
-              <HCaptcha
-                sitekey={hcaptchaSiteKey}
-                size={process.env.NODE_ENV === 'development' ? 'normal' : 'invisible'}
-                onVerify={handleCaptchaVerify}
-                onExpire={handleCaptchaExpire}
-                onError={handleCaptchaError}
-                onLoad={handleCaptchaLoad}
-                ref={hcaptchaRef}
-              />
 
               {successMessageClaim && (
                 <p className={`success-message ${animationClass}`}>{successMessageClaim}</p>
@@ -526,10 +511,6 @@ function App() {
                   disabled={isContributing}
                 >
                   {isContributing ? 'Contributing...' : '✨ Contribute 💸'}
-                  <span className="tooltip-text">🔮 contribute more... 🎁</span>
-                  <span className="tooltip-text">
-                    Contribute .01 to get WL'd and begin claiming daily
-                  </span>
                 </button>
               </div>
 
@@ -612,14 +593,14 @@ function App() {
                 <div className="animation-container">
                   {[...Array(25)].map((_, index) => {
                     const randomLeft = Math.floor(Math.random() * 100);
-                    const randomDelay = Math.random() * 2 + 1; 
+                    const randomDelay = Math.random() * 2 + 1;
                     const randomRotation = Math.floor(Math.random() * 360);
 
                     const style = {
                       left: `${randomLeft}%`,
                       animationDelay: `${randomDelay}s`,
                       transform: `rotate(${randomRotation}deg)`,
-                      animationDuration: '5s', 
+                      animationDuration: '5s',
                     };
 
                     return (
