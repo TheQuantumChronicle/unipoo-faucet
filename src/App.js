@@ -28,6 +28,10 @@ function App() {
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
 
+  // **New State Variables for Balance Checking**
+  const [userBalance, setUserBalance] = useState('0');
+  const MIN_BALANCE = 0.0099; // Minimum balance required in ETH
+
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const rpcUrl = process.env.REACT_APP_RPC_URL;
   const blockExplorerUrl = process.env.REACT_APP_BLOCK_EXPLORER_URL;
@@ -59,6 +63,20 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
+  // **Function to Fetch User Balance**
+  const fetchUserBalance = async () => {
+    if (provider && account) {
+      try {
+        const balance = await provider.getBalance(account);
+        const formattedBalance = parseFloat(ethers.utils.formatEther(balance));
+        setUserBalance(formattedBalance.toFixed(4)); // Keeping 4 decimal places
+      } catch (error) {
+        console.error('Failed to fetch balance:', error);
+        setErrorMessageWithTimeout('Failed to fetch wallet balance.');
+      }
+    }
+  };
+
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
@@ -79,6 +97,7 @@ function App() {
               setContract(_contract);
               setNetworkError(false);
               setErrorMessage(null);
+              fetchUserBalance(); // Fetch balance upon successful connection
             } else {
               setNetworkError(true);
               setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
@@ -126,6 +145,8 @@ function App() {
           } else {
             setCurrentTask(1);
           }
+
+          fetchUserBalance(); // Update balance if user data changes
         } catch (error) {
           setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
         }
@@ -150,6 +171,7 @@ function App() {
       });
       setNetworkError(false);
       setErrorMessage(null);
+      fetchUserBalance(); // Update balance after switching network
     } catch (error) {
       if (error.code === 4902) {
         try {
@@ -171,6 +193,7 @@ function App() {
           });
           setNetworkError(false);
           setErrorMessage(null);
+          fetchUserBalance(); // Update balance after adding network
         } catch (addError) {
           setErrorMessageWithTimeout('Failed to add the Unichain Sepolia network.');
         }
@@ -197,6 +220,7 @@ function App() {
           setContract(_contract);
           setNetworkError(false);
           setErrorMessage(null);
+          fetchUserBalance(); // Fetch balance upon successful connection
         } else {
           setNetworkError(true);
           setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
@@ -322,6 +346,7 @@ function App() {
       const totalContributedWei = userData.totalContributed;
       const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
       setTotalContributed(totalContributedEth);
+      fetchUserBalance(); // Refresh balance after contribution
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Contribution failed: ${errorMsg}`);
@@ -351,6 +376,11 @@ function App() {
       return;
     }
 
+    if (userBalance < MIN_BALANCE) {
+      setErrorMessageWithTimeout('⚠️ Insufficient Sepolia ETH to cover gas fees. Please obtain more ETH.');
+      return;
+    }
+
     try {
       setIsClaiming(true);
       const tx = await contract.withdraw();
@@ -370,6 +400,7 @@ function App() {
       const events = await contract.queryFilter(filter, 0, 'latest');
       const claimsCount = events.length;
       setClaimedTimes(claimsCount);
+      fetchUserBalance(); // Refresh balance after claiming
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
@@ -458,6 +489,13 @@ function App() {
               )}
             </div>
 
+            {/* **Balance Warning Message** */}
+            {account && parseFloat(userBalance) < MIN_BALANCE && (
+              <div className="balance-warning">
+                ⚠️ Your Sepolia ETH balance is below 0.0099 ETH. Please obtain more Sepolia ETH to cover gas fees before making daily claims and contributions.
+              </div>
+            )}
+
             {networkError && (
               <div className="network-error-container">
                 <p className="network-error-message">
@@ -484,11 +522,17 @@ function App() {
                 className="claim-btn"
                 onClick={claimETH}
                 disabled={
-                  !isWhitelisted || remainingTime > 0 || isClaiming || !captchaToken
+                  !isWhitelisted ||
+                  remainingTime > 0 ||
+                  isClaiming ||
+                  !captchaToken ||
+                  parseFloat(userBalance) < MIN_BALANCE
                 }
                 title={
                   !isWhitelisted
                     ? 'Contribute at least 0.01 ETH to get whitelisted'
+                    : parseFloat(userBalance) < MIN_BALANCE
+                    ? 'Insufficient Sepolia ETH to cover gas fees'
                     : 'Click to claim'
                 }
               >
@@ -517,13 +561,23 @@ function App() {
                   placeholder="Amount in ETH"
                   value={contributeAmount}
                   onChange={handleContributeAmountChange}
+                  disabled={parseFloat(userBalance) < MIN_BALANCE}
                 />
                 <button
                   className="contribute-btn"
                   onClick={contributeToFaucet}
-                  disabled={isContributing}
+                  disabled={isContributing || parseFloat(userBalance) < MIN_BALANCE}
+                  title={
+                    parseFloat(userBalance) < MIN_BALANCE
+                      ? 'Users must have at least 0.0099 Sepolia ETH in their wallet to begin contributing/claiming. Contribute 0.01 ETH to get whitelisted and begin claiming daily.'
+                      : 'Contribute 0.01 ETH to get whitelisted and begin claiming daily.'
+                  }
                 >
                   {isContributing ? 'Contributing...' : '✨ Contribute 💸'}
+                  {/* **Tooltip Text** */}
+                  <span className="tooltip-text">
+                    Users need Unichain Sepolia ETH in their wallet to begin contributing/claiming. Contribute 0.01e or more to get whitelisted and begin claiming your daily rainbow-filled 🦄 💩 
+                  </span>
                 </button>
               </div>
 
