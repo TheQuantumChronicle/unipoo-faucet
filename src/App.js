@@ -36,6 +36,7 @@ function App() {
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
   const cooldownDuration = 86400;
+  const TARGET_CHAIN_ID = 1301; // Define as a constant for clarity
 
   const shortenAddress = (address) => {
     if (!address) return '';
@@ -72,9 +73,8 @@ function App() {
             setProvider(_provider);
 
             const network = await _provider.getNetwork();
-            const targetChainId = 1301;
 
-            if (network.chainId === targetChainId) {
+            if (network.chainId === TARGET_CHAIN_ID) {
               const _contract = new ethers.Contract(contractAddress, contractABI, signer);
               setContract(_contract);
               setNetworkError(false);
@@ -96,7 +96,7 @@ function App() {
     };
 
     checkIfWalletConnected();
-  }, []);
+  }, [contractAddress, TARGET_CHAIN_ID]);
 
   useEffect(() => {
     const checkUserData = async () => {
@@ -141,7 +141,7 @@ function App() {
       return;
     }
 
-    const hexChainId = `0x${(1301).toString(16)}`;
+    const hexChainId = `0x${TARGET_CHAIN_ID.toString(16)}`;
 
     try {
       await window.ethereum.request({
@@ -191,9 +191,8 @@ function App() {
         setProvider(_provider);
 
         const network = await _provider.getNetwork();
-        const targetChainId = 1301;
 
-        if (network.chainId === targetChainId) {
+        if (network.chainId === TARGET_CHAIN_ID) {
           const _contract = new ethers.Contract(contractAddress, contractABI, signer);
           setContract(_contract);
           setNetworkError(false);
@@ -241,8 +240,16 @@ function App() {
         }
       };
 
-      const handleChainChanged = () => {
-        window.location.reload();
+      const handleChainChanged = (chainId) => {
+        // Handle the chain change without reloading
+        if (parseInt(chainId, 16) === TARGET_CHAIN_ID) {
+          setNetworkError(false);
+          setErrorMessage(null);
+          connectWallet();
+        } else {
+          setNetworkError(true);
+          setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+        }
       };
 
       window.ethereum.on('accountsChanged', handleAccountsChanged);
@@ -255,7 +262,7 @@ function App() {
         }
       };
     }
-  }, []);
+  }, [TARGET_CHAIN_ID]);
 
   useEffect(() => {
     if (remainingTime > 0) {
@@ -431,12 +438,18 @@ function App() {
           <div className={`task-container task-${currentTask}`}>
             <div className="account-info">
               {account ? (
-                <>
-                  <p className="connected-account">🌈 {shortenAddress(account)}</p>
+                <div className="account-details">
+                  <p className="connected-account">
+                    🌈 {shortenAddress(account)}
+                    {/* Whitelisted Badge */}
+                    {isWhitelisted && (
+                      <span className="whitelist-badge" title="Whitelisted User"></span>
+                    )}
+                  </p>
                   <button className="change-wallet-btn" onClick={handleChangeWallet}>
                     Change Wallet
                   </button>
-                </>
+                </div>
               ) : (
                 <button className="connect-wallet-btn" onClick={connectWallet}>
                   <img src="/logo.png" alt="Logo" className="button-logo" />
@@ -519,7 +532,7 @@ function App() {
               )}
 
               <p className="total-contributed">
-                Total Contributed: <strong>{totalContributed} ETH</strong>
+                My Contributions: <strong>{totalContributed} ETH</strong>
               </p>
               <FaucetBalance contract={contract} />
 

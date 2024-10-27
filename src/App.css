@@ -482,6 +482,48 @@ button:disabled {
   filter: invert(1) drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.25));
 }
 
+/* Whitelisted Badge */
+.whitelist-badge {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 10px;
+  top: 2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f50db4, #f50db4);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+
+.whitelist-badge::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Adjustments for Responsive Design */
+@media (max-width: 600px) {
+  .whitelist-badge {
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+  }
+
+  .whitelist-badge::after {
+    top: 3px;
+    left: 6px;
+    width: 4px;
+    height: 8px;
+  }
+}
+
 /* Progress Bar */
 .progress-bar-container {
   width: 80%;
