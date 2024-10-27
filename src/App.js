@@ -1,5 +1,3 @@
-// src/App.js
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ethers } from 'ethers';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -9,7 +7,6 @@ import contractABI from './contractABI.json';
 import './App.css';
 
 function App() {
-  // **State Variables**
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
   const [provider, setProvider] = useState(null);
@@ -29,13 +26,11 @@ function App() {
   const [currentTask, setCurrentTask] = useState(1);
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
 
-  // **hCaptcha State and Ref**
   const [captchaToken, setCaptchaToken] = useState('');
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [isCaptchaReady, setIsCaptchaReady] = useState(false);
   const hcaptchaRef = useRef(null);
 
-  // **Environment Variables**
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const rpcUrl = process.env.REACT_APP_RPC_URL;
   const blockExplorerUrl = process.env.REACT_APP_BLOCK_EXPLORER_URL;
@@ -43,9 +38,8 @@ function App() {
   const twitterProfileUrl = process.env.REACT_APP_TWITTER_PROFILE_URL;
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
-  const cooldownDuration = 86400; // 24 hours in seconds
+  const cooldownDuration = 86400;
 
-  // **Utility Functions**
   const shortenAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -67,7 +61,6 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
-  // **Check User Data from Smart Contract**
   const checkUserData = useCallback(async () => {
     if (contract && account) {
       try {
@@ -102,7 +95,6 @@ function App() {
     }
   }, [contract, account]);
 
-  // **Initialize and Connect Wallet**
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
@@ -146,7 +138,6 @@ function App() {
     checkIfWalletConnected();
   }, [checkUserData]);
 
-  // **Switch to Unichain Sepolia Network**
   const switchToUnichainSepolia = async () => {
     if (!window.ethereum) {
       setErrorMessageWithTimeout('MetaMask is not installed. Please install it to switch networks.');
@@ -196,7 +187,6 @@ function App() {
     }
   };
 
-  // **Connect Wallet**
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
@@ -230,7 +220,6 @@ function App() {
     }
   };
 
-  // **Handle Wallet Change**
   const handleChangeWallet = async () => {
     if (window.ethereum) {
       try {
@@ -248,7 +237,6 @@ function App() {
     }
   };
 
-  // **Event Listeners for Accounts and Chain Changes**
   useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
@@ -280,12 +268,10 @@ function App() {
     }
   }, []);
 
-  // **Update User Data When Contract or Account Changes**
   useEffect(() => {
     checkUserData();
   }, [contract, account, checkUserData]);
 
-  // **Countdown Timer for Cooldown**
   useEffect(() => {
     if (remainingTime > 0) {
       const interval = setInterval(() => {
@@ -302,7 +288,6 @@ function App() {
     }
   }, [remainingTime]);
 
-  // **Update Task Based on Twitter Confirmation**
   useEffect(() => {
     if (currentTask === 3 && twitterConfirmed) {
       setCurrentTask(4);
@@ -368,7 +353,6 @@ function App() {
       return;
     }
 
-    // Execute hCaptcha
     if (hcaptchaRef.current && isCaptchaReady) {
       hcaptchaRef.current.execute();
     } else {
@@ -376,7 +360,6 @@ function App() {
     }
   };
 
-  // **Handle Contribution Amount Input**
   const handleContributeAmountChange = (e) => {
     const value = e.target.value;
     if (/^\d*\.?\d{0,4}$/.test(value)) {
@@ -384,12 +367,10 @@ function App() {
     }
   };
 
-  // **hCaptcha Handlers**
   const handleCaptchaVerify = async (token) => {
     setCaptchaToken(token);
     setIsCaptchaVerified(true);
 
-    // Proceed with the claim after CAPTCHA is verified
     try {
       setIsClaiming(true);
       const tx = await contract.withdraw();
@@ -398,7 +379,6 @@ function App() {
       setSuccessMessageClaim('💸 Claim successful!');
       triggerSuccessAnimation();
 
-      // Reset CAPTCHA
       setCaptchaToken('');
       setIsCaptchaVerified(false);
 
@@ -428,13 +408,12 @@ function App() {
     setIsCaptchaReady(true);
   };
 
-  // **Animation Functions**
   const triggerSuccessAnimation = () => {
     if (animationClass !== 'success-animation') {
       setAnimationClass('success-animation');
       setTimeout(() => {
         setAnimationClass('');
-      }, 5000); // Duration of the animation
+      }, 5000); 
     }
   };
 
@@ -443,7 +422,7 @@ function App() {
       setAnimationClass('failure-animation');
       setTimeout(() => {
         setAnimationClass('');
-      }, 3000); // Duration of the animation
+      }, 3000);
     }
   };
 
@@ -494,7 +473,6 @@ function App() {
               </div>
             )}
 
-            {/* Main DApp content */}
             <div className="main-content">
               <button
                 className="claim-btn"
@@ -509,7 +487,6 @@ function App() {
                 {isClaiming ? 'Claiming...' : 'Claim'}
               </button>
 
-              {/* hCaptcha Component */}
               <HCaptcha
                 sitekey={hcaptchaSiteKey}
                 size={process.env.NODE_ENV === 'development' ? 'normal' : 'invisible'}
@@ -635,14 +612,14 @@ function App() {
                 <div className="animation-container">
                   {[...Array(25)].map((_, index) => {
                     const randomLeft = Math.floor(Math.random() * 100);
-                    const randomDelay = Math.random() * 2 + 1; // Increased delay
+                    const randomDelay = Math.random() * 2 + 1; 
                     const randomRotation = Math.floor(Math.random() * 360);
 
                     const style = {
                       left: `${randomLeft}%`,
                       animationDelay: `${randomDelay}s`,
                       transform: `rotate(${randomRotation}deg)`,
-                      animationDuration: '5s', // Set animation duration
+                      animationDuration: '5s', 
                     };
 
                     return (

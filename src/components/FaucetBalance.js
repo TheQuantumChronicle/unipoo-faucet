@@ -1,5 +1,3 @@
-// src/components/FaucetBalance.js
-
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers'; 
 

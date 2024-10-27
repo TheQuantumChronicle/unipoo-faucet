@@ -1,5 +1,3 @@
-// src/components/Background.js
-
 import React, { useMemo, memo } from 'react';
 import './Background.css';
 
@@ -11,7 +9,7 @@ function Background() {
     return Array.from({ length: totalPoops }).map((_, index) => {
       const leftPosition = Math.random() * 100;
       const animationDelay = Math.random() * -30;
-      const animationDuration = Math.random() * 20 + 40; // Duration between 40s and 60s
+      const animationDuration = Math.random() * 20 + 40; 
       const size = Math.random() * 10 + 30;
 
       const style = {
@@ -36,7 +34,7 @@ function Background() {
       const leftPosition = Math.random() * 100;
       const topPosition = Math.random() * 100;
       const animationDelay = Math.random() * -20;
-      const animationDuration = Math.random() * 5 + 5; // Duration between 5s and 10s
+      const animationDuration = Math.random() * 5 + 5; 
       const size = Math.random() * 3 + 2;
 
       const style = {
