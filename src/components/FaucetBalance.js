@@ -1,3 +1,5 @@
+// src/components/FaucetBalance.js
+
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers'; 
 
@@ -8,8 +10,8 @@ const FaucetBalance = ({ contract, refresh }) => {
         const loadBalance = async () => {
             if (contract) {
                 try {
-                    const balance = await contract.getFaucetBalance(); 
-                    const formattedBalance = ethers.formatEther(balance); 
+                    const balanceWei = await contract.getFaucetBalance(); 
+                    const formattedBalance = ethers.utils.formatEther(balanceWei); 
                     setBalance(parseFloat(formattedBalance).toFixed(4)); 
                 } catch (error) {
                     console.error("Error fetching faucet balance:", error);

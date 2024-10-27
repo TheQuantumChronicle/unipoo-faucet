@@ -1,6 +1,6 @@
 // src/App.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ethers } from 'ethers';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import FaucetBalance from './components/FaucetBalance';
@@ -9,6 +9,7 @@ import contractABI from './contractABI.json';
 import './App.css';
 
 function App() {
+  // **State Variables**
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
   const [provider, setProvider] = useState(null);
@@ -28,19 +29,23 @@ function App() {
   const [currentTask, setCurrentTask] = useState(1);
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
 
-  // hCaptcha State
+  // **hCaptcha State and Ref**
   const [captchaToken, setCaptchaToken] = useState('');
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [isCaptchaReady, setIsCaptchaReady] = useState(false);
+  const hcaptchaRef = useRef(null);
 
-  // Environment Variables
+  // **Environment Variables**
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const rpcUrl = process.env.REACT_APP_RPC_URL;
   const blockExplorerUrl = process.env.REACT_APP_BLOCK_EXPLORER_URL;
+  const hcaptchaSiteKey = process.env.REACT_APP_HCAPTCHA_SITEKEY;
   const twitterProfileUrl = process.env.REACT_APP_TWITTER_PROFILE_URL;
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
-  const cooldownDuration = 86400; 
+  const cooldownDuration = 86400; // 24 hours in seconds
 
+  // **Utility Functions**
   const shortenAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -62,7 +67,8 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
-  const checkUserData = async () => {
+  // **Check User Data from Smart Contract**
+  const checkUserData = useCallback(async () => {
     if (contract && account) {
       try {
         const user = await contract.users(account);
@@ -77,7 +83,7 @@ function App() {
         setClaimedTimes(claimsCount);
 
         const totalContributedWei = user.totalContributed;
-        const totalContributedEth = ethers.formatEther(totalContributedWei);
+        const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
         setTotalContributed(totalContributedEth);
 
         if (claimsCount >= 7) {
@@ -90,39 +96,43 @@ function App() {
           setCurrentTask(1);
         }
       } catch (error) {
-        console.error("Error checking user data:", error);
+        console.error('Error checking user data:', error);
         setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
       }
     }
-  };
+  }, [contract, account]);
 
+  // **Initialize and Connect Wallet**
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
         try {
-          const _provider = new ethers.BrowserProvider(window.ethereum);
-          const network = await _provider.getNetwork();
+          const _provider = new ethers.providers.Web3Provider(window.ethereum);
+          const accounts = await _provider.listAccounts();
 
-          const targetChainId = BigInt(1301);
-
-          if (network.chainId === targetChainId) {
-            const signer = await _provider.getSigner();
-            const _contract = new ethers.Contract(contractAddress, contractABI, signer);
-            setContract(_contract);
-            setProvider(_provider);
-
+          if (accounts.length > 0) {
+            const signer = _provider.getSigner();
             const address = await signer.getAddress();
             setAccount(address);
-            setNetworkError(false);
-            setErrorMessage(null);
+            setProvider(_provider);
 
-            await checkUserData();
-          } else {
-            setNetworkError(true);
-            setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+            const network = await _provider.getNetwork();
+            const targetChainId = 1301;
+
+            if (network.chainId === targetChainId) {
+              const _contract = new ethers.Contract(contractAddress, contractABI, signer);
+              setContract(_contract);
+              setNetworkError(false);
+              setErrorMessage(null);
+
+              await checkUserData();
+            } else {
+              setNetworkError(true);
+              setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+            }
           }
         } catch (error) {
-          console.error("Error loading blockchain data:", error);
+          console.error('Error loading blockchain data:', error);
           setErrorMessageWithTimeout('Failed to load blockchain data.');
           setNetworkError(true);
         }
@@ -134,11 +144,12 @@ function App() {
     };
 
     checkIfWalletConnected();
-  }, []);
+  }, [checkUserData]);
 
+  // **Switch to Unichain Sepolia Network**
   const switchToUnichainSepolia = async () => {
     if (!window.ethereum) {
-      setErrorMessageWithTimeout("MetaMask is not installed. Please install it to switch networks.");
+      setErrorMessageWithTimeout('MetaMask is not installed. Please install it to switch networks.');
       return;
     }
 
@@ -147,7 +158,7 @@ function App() {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: hexChainId }]
+        params: [{ chainId: hexChainId }],
       });
       setNetworkError(false);
       setErrorMessage(null);
@@ -157,17 +168,19 @@ function App() {
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: hexChainId,
-              chainName: 'Unichain Sepolia Testnet',
-              rpcUrls: [rpcUrl],
-              nativeCurrency: {
-                name: 'Ethereum',
-                symbol: 'ETH',
-                decimals: 18,
+            params: [
+              {
+                chainId: hexChainId,
+                chainName: 'Unichain Sepolia Testnet',
+                rpcUrls: [rpcUrl],
+                nativeCurrency: {
+                  name: 'Ethereum',
+                  symbol: 'ETH',
+                  decimals: 18,
+                },
+                blockExplorerUrls: [blockExplorerUrl],
               },
-              blockExplorerUrls: [blockExplorerUrl],
-            }]
+            ],
           });
           setNetworkError(false);
           setErrorMessage(null);
@@ -183,41 +196,41 @@ function App() {
     }
   };
 
+  // **Connect Wallet**
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
-        const _provider = new ethers.BrowserProvider(window.ethereum);
-        await _provider.send("eth_requestAccounts", []);
-        const network = await _provider.getNetwork();
-
-        const targetChainId = BigInt(1301);
-
-        if (network.chainId !== targetChainId) {
-          setNetworkError(true);
-          setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
-          return;
-        }
-
-        const signer = await _provider.getSigner();
-        const _contract = new ethers.Contract(contractAddress, contractABI, signer);
-        setContract(_contract);
-        setProvider(_provider);
-
+        const _provider = new ethers.providers.Web3Provider(window.ethereum);
+        await _provider.send('eth_requestAccounts', []);
+        const signer = _provider.getSigner();
         const address = await signer.getAddress();
         setAccount(address);
-        setNetworkError(false);
-        setErrorMessage(null);
+        setProvider(_provider);
 
-        await checkUserData();
+        const network = await _provider.getNetwork();
+        const targetChainId = 1301;
+
+        if (network.chainId === targetChainId) {
+          const _contract = new ethers.Contract(contractAddress, contractABI, signer);
+          setContract(_contract);
+          setNetworkError(false);
+          setErrorMessage(null);
+
+          await checkUserData();
+        } else {
+          setNetworkError(true);
+          setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+        }
       } catch (error) {
-        console.error("Error connecting to wallet:", error);
+        console.error('Error connecting to wallet:', error);
         setErrorMessageWithTimeout('Failed to connect wallet. Please try again.');
       }
     } else {
-      setErrorMessageWithTimeout("Please install MetaMask!");
+      setErrorMessageWithTimeout('Please install MetaMask!');
     }
   };
 
+  // **Handle Wallet Change**
   const handleChangeWallet = async () => {
     if (window.ethereum) {
       try {
@@ -225,15 +238,17 @@ function App() {
           method: 'wallet_requestPermissions',
           params: [{ eth_accounts: {} }],
         });
+        await connectWallet();
       } catch (error) {
         console.error('Error changing wallet:', error);
         setErrorMessageWithTimeout('Failed to change wallet.');
       }
     } else {
-      setErrorMessageWithTimeout("Please install MetaMask!");
+      setErrorMessageWithTimeout('Please install MetaMask!');
     }
   };
 
+  // **Event Listeners for Accounts and Chain Changes**
   useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
@@ -265,10 +280,12 @@ function App() {
     }
   }, []);
 
+  // **Update User Data When Contract or Account Changes**
   useEffect(() => {
     checkUserData();
-  }, [contract, account]);
+  }, [contract, account, checkUserData]);
 
+  // **Countdown Timer for Cooldown**
   useEffect(() => {
     if (remainingTime > 0) {
       const interval = setInterval(() => {
@@ -285,12 +302,14 @@ function App() {
     }
   }, [remainingTime]);
 
+  // **Update Task Based on Twitter Confirmation**
   useEffect(() => {
     if (currentTask === 3 && twitterConfirmed) {
       setCurrentTask(4);
     }
   }, [twitterConfirmed, currentTask]);
 
+  // **Contribute to Faucet**
   const contributeToFaucet = async () => {
     setErrorMessage(null);
     setSuccessMessageContribute(null);
@@ -302,15 +321,15 @@ function App() {
     }
     try {
       setIsContributing(true);
-      const parsedAmount = ethers.parseEther(contributeAmount);
+      const parsedAmount = ethers.utils.parseEther(contributeAmount);
       const user = await contract.users(account);
 
-      if (!user.isWhitelisted && parsedAmount < ethers.parseEther('0.01')) {
-        setErrorMessageWithTimeout("You must contribute at least 0.01 ETH to be whitelisted.");
+      if (!user.isWhitelisted && parsedAmount.lt(ethers.utils.parseEther('0.01'))) {
+        setErrorMessageWithTimeout('You must contribute at least 0.01 ETH to be whitelisted.');
         setIsContributing(false);
         return;
-      } else if (user.isWhitelisted && parsedAmount < ethers.parseEther('0.01')) {
-        setErrorMessageWithTimeout("You must contribute at least 0.01 ETH.");
+      } else if (user.isWhitelisted && parsedAmount.lt(ethers.utils.parseEther('0.01'))) {
+        setErrorMessageWithTimeout('You must contribute at least 0.01 ETH.');
         setIsContributing(false);
         return;
       }
@@ -319,12 +338,7 @@ function App() {
       await tx.wait();
 
       setSuccessMessageContribute('🎉 Thanks for contributing!');
-      setAnimationClass('success-animation');
-
-      setTimeout(() => {
-        setSuccessMessageContribute(null);
-        setAnimationClass('');
-      }, 5000);
+      triggerSuccessAnimation();
 
       setContributeAmount('');
       await checkUserData();
@@ -332,16 +346,13 @@ function App() {
       console.error('Contribution failed:', error);
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Contribution failed: ${errorMsg}`);
-      setAnimationClass('failure-animation');
-
-      setTimeout(() => {
-        setAnimationClass('');
-      }, 3000);
+      triggerFailureAnimation();
     } finally {
       setIsContributing(false);
     }
   };
 
+  // **Claim ETH from Faucet**
   const claimETH = async () => {
     setErrorMessage(null);
     setSuccessMessageClaim(null);
@@ -352,43 +363,20 @@ function App() {
       return;
     }
 
-    if (contract && remainingTime === 0 && isCaptchaVerified) { 
-      try {
-        setIsClaiming(true);
-        const tx = await contract.withdraw();
-        await tx.wait();
+    if (remainingTime > 0) {
+      setErrorMessageWithTimeout('⏳ Claim is on cooldown. Please wait.');
+      return;
+    }
 
-        setSuccessMessageClaim('💸 Claim successful!');
-        setAnimationClass('success-animation');
-
-        // Reset CAPTCHA
-        setCaptchaToken('');
-        setIsCaptchaVerified(false);
-
-        setTimeout(() => {
-          setSuccessMessageClaim(null);
-          setAnimationClass('');
-        }, 5000);
-
-        await checkUserData();
-      } catch (error) {
-        console.error('Error claiming ETH:', error);
-        const errorMsg = error.reason || error.message || 'Transaction failed.';
-        setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
-        setAnimationClass('failure-animation');
-
-        setTimeout(() => {
-          setAnimationClass('');
-        }, 3000);
-      } finally {
-        setIsClaiming(false);
-      }
+    // Execute hCaptcha
+    if (hcaptchaRef.current && isCaptchaReady) {
+      hcaptchaRef.current.execute();
     } else {
-      console.warn("Claim attempted but still on cooldown or contract not ready.");
-      setErrorMessageWithTimeout("⏳ Claim is on cooldown. Please wait.");
+      setErrorMessageWithTimeout('hCaptcha is not ready yet. Please wait a moment.');
     }
   };
 
+  // **Handle Contribution Amount Input**
   const handleContributeAmountChange = (e) => {
     const value = e.target.value;
     if (/^\d*\.?\d{0,4}$/.test(value)) {
@@ -396,15 +384,67 @@ function App() {
     }
   };
 
-  // hCaptcha Handlers
-  const handleCaptchaVerify = (token) => {
+  // **hCaptcha Handlers**
+  const handleCaptchaVerify = async (token) => {
     setCaptchaToken(token);
     setIsCaptchaVerified(true);
+
+    // Proceed with the claim after CAPTCHA is verified
+    try {
+      setIsClaiming(true);
+      const tx = await contract.withdraw();
+      await tx.wait();
+
+      setSuccessMessageClaim('💸 Claim successful!');
+      triggerSuccessAnimation();
+
+      // Reset CAPTCHA
+      setCaptchaToken('');
+      setIsCaptchaVerified(false);
+
+      await checkUserData();
+    } catch (error) {
+      console.error('Error claiming ETH:', error);
+      const errorMsg = error.reason || error.message || 'Transaction failed.';
+      setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
+      triggerFailureAnimation();
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
   const handleCaptchaExpire = () => {
     setCaptchaToken('');
     setIsCaptchaVerified(false);
+  };
+
+  const handleCaptchaError = (err) => {
+    console.error('hCaptcha Error:', err);
+    setErrorMessageWithTimeout('hCaptcha failed to load. Please refresh the page.');
+  };
+
+  const handleCaptchaLoad = () => {
+    console.log('hCaptcha loaded');
+    setIsCaptchaReady(true);
+  };
+
+  // **Animation Functions**
+  const triggerSuccessAnimation = () => {
+    if (animationClass !== 'success-animation') {
+      setAnimationClass('success-animation');
+      setTimeout(() => {
+        setAnimationClass('');
+      }, 5000); // Duration of the animation
+    }
+  };
+
+  const triggerFailureAnimation = () => {
+    if (animationClass !== 'failure-animation') {
+      setAnimationClass('failure-animation');
+      setTimeout(() => {
+        setAnimationClass('');
+      }, 3000); // Duration of the animation
+    }
   };
 
   return (
@@ -426,48 +466,59 @@ function App() {
         <div className="loading-spinner"></div>
       ) : (
         <>
-          {networkError && (
-            <div className="network-error-container">
-              <p className="network-error-message">
-                🌪 Please switch to the Unichain Sepolia Testnet 🌪
-              </p>
-              <button className="switch-network-btn" onClick={switchToUnichainSepolia}>
-                Switch Network
-              </button>
+          <div className={`task-container task-${currentTask}`}>
+            <div className="account-info">
+              {account ? (
+                <>
+                  <p className="connected-account">🌈 {shortenAddress(account)}</p>
+                  <button className="change-wallet-btn" onClick={handleChangeWallet}>
+                    Change Wallet
+                  </button>
+                </>
+              ) : (
+                <button className="connect-wallet-btn" onClick={connectWallet}>
+                  <img src="/logo.png" alt="Logo" className="button-logo" />
+                  Connect Wallet
+                </button>
+              )}
             </div>
-          )}
 
-          {!networkError && account && (
-            <div className={`task-container task-${currentTask}`}>
-              <div className="account-info">
-                <p className="connected-account">🌈 {shortenAddress(account)}</p>
-                <button className="change-wallet-btn" onClick={handleChangeWallet}>
-                  Change Wallet
+            {networkError && (
+              <div className="network-error-container">
+                <p className="network-error-message">
+                  🌪 Please switch to the Unichain Sepolia Testnet 🌪
+                </p>
+                <button className="switch-network-btn" onClick={switchToUnichainSepolia}>
+                  Switch/Add Network
                 </button>
               </div>
+            )}
 
+            {/* Main DApp content */}
+            <div className="main-content">
               <button
                 className="claim-btn"
                 onClick={claimETH}
-                disabled={!isWhitelisted || remainingTime > 0 || isClaiming || !isCaptchaVerified}
+                disabled={!isWhitelisted || remainingTime > 0 || isClaiming || !isCaptchaReady}
                 title={
                   !isWhitelisted
                     ? 'Contribute at least 0.01 ETH to get whitelisted'
-                    : 'Please complete the CAPTCHA to claim'
+                    : 'Click to claim'
                 }
               >
                 {isClaiming ? 'Claiming...' : 'Claim'}
               </button>
 
-              <div className="captcha-container">
-                <HCaptcha
-                  sitekey={process.env.REACT_APP_HCAPTCHA_SITEKEY}
-                  theme="light"
-                  size="compact"
-                  onVerify={handleCaptchaVerify}
-                  onExpire={handleCaptchaExpire}
-                />
-              </div>
+              {/* hCaptcha Component */}
+              <HCaptcha
+                sitekey={hcaptchaSiteKey}
+                size={process.env.NODE_ENV === 'development' ? 'normal' : 'invisible'}
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+                onError={handleCaptchaError}
+                onLoad={handleCaptchaLoad}
+                ref={hcaptchaRef}
+              />
 
               {successMessageClaim && (
                 <p className={`success-message ${animationClass}`}>{successMessageClaim}</p>
@@ -499,7 +550,9 @@ function App() {
                 >
                   {isContributing ? 'Contributing...' : '✨ Contribute 💸'}
                   <span className="tooltip-text">🔮 contribute more... 🎁</span>
-                  <span className="tooltip-text">Contribute .01 to get WL'd and begin claiming daily</span>
+                  <span className="tooltip-text">
+                    Contribute .01 to get WL'd and begin claiming daily
+                  </span>
                 </button>
               </div>
 
@@ -528,14 +581,8 @@ function App() {
                       <p>
                         For the final task, follow us on X (Twitter) and make a post saying:
                       </p>
-                      <p>
-                        "I got my daily rainbow-filled at @yourxaccount 🦄 🌈💩"
-                      </p>
-                      <a
-                        href={twitterProfileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <p>"I got my daily rainbow-filled at @UniPooFaucet 🦄 🌈💩"</p>
+                      <a href={twitterProfileUrl} target="_blank" rel="noopener noreferrer">
                         Follow us on X
                       </a>
                       <div className="twitter-confirmation">
@@ -545,9 +592,7 @@ function App() {
                           checked={twitterConfirmed}
                           onChange={(e) => setTwitterConfirmed(e.target.checked)}
                         />
-                        <label htmlFor="twitterConfirmed">
-                          I have followed and made the post
-                        </label>
+                        <label htmlFor="twitterConfirmed">I have followed and made the post</label>
                       </div>
                     </div>
                   )}
@@ -590,16 +635,25 @@ function App() {
                 <div className="animation-container">
                   {[...Array(25)].map((_, index) => {
                     const randomLeft = Math.floor(Math.random() * 100);
-                    const randomDelay = Math.random() * 0.5;
+                    const randomDelay = Math.random() * 2 + 1; // Increased delay
                     const randomRotation = Math.floor(Math.random() * 360);
 
                     const style = {
                       left: `${randomLeft}%`,
                       animationDelay: `${randomDelay}s`,
                       transform: `rotate(${randomRotation}deg)`,
+                      animationDuration: '5s', // Set animation duration
                     };
 
-                    return <div key={index} className="confetti-piece" style={style}></div>;
+                    return (
+                      <img
+                        key={index}
+                        src="/logo.png"
+                        alt="Confetti"
+                        className="confetti-piece"
+                        style={style}
+                      />
+                    );
                   })}
                 </div>
               )}
@@ -610,13 +664,15 @@ function App() {
                 </div>
               )}
             </div>
-          )}
+          </div>
 
-          {!networkError && !account && (
-            <button className="connect-wallet-btn" onClick={connectWallet}>
-              <img src="/logo.png" alt="Logo" className="button-logo" />
-              Connect Wallet
-            </button>
+          {!account && !isLoading && (
+            <div className="connect-wallet-container">
+              <button className="connect-wallet-btn" onClick={connectWallet}>
+                <img src="/logo.png" alt="Logo" className="button-logo" />
+                Connect Wallet
+              </button>
+            </div>
           )}
         </>
       )}

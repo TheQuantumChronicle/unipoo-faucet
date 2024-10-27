@@ -1,18 +1,20 @@
 /* src/App.css */
 
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+/* Global Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
-
 body {
   font-family: 'Fredoka One', cursive;
   color: #333;
   overflow-x: hidden;
   position: relative;
+  background-color: #f9f9f9;
 }
 
 body::before {
@@ -22,13 +24,14 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
-    radial-gradient(circle, rgba(255, 255, 255, 0.3) 30%, rgba(255, 255, 255, 0.6) 70%, rgba(255, 255, 255, 0.9) 100%), 
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.3) 30%, rgba(255, 255, 255, 0.6) 70%, rgba(255, 255, 255, 0.9) 100%),
     url('../public/backdrop2.png') center center / cover no-repeat;
   background-attachment: fixed;
   z-index: -3;
 }
 
+/* Main App Container */
 .App {
   text-align: center;
   background: rgba(255, 255, 255, 0.95);
@@ -44,6 +47,7 @@ body::before {
   border: 2px solid #f50db4;
 }
 
+/* Task-Based Border Colors */
 .task-1 .App {
   border-color: #f50db4;
 }
@@ -60,28 +64,31 @@ body::before {
   border-color: #ff94e6;
 }
 
-header {
+/* Header Styles */
+.app-header {
   margin-bottom: 20px;
 }
 
-header .app-logo {
+.app-logo {
   width: 120px;
   height: auto;
   margin-bottom: 10px;
 }
 
-header .app-title {
+.app-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: 2.8rem;
   font-weight: bold;
   color: #f50db4;
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-header .app-subtitle {
+.app-subtitle {
   font-size: 1.3rem;
   color: #333;
-  text-shadow: none;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
 }
 
 .title-logo {
@@ -91,81 +98,38 @@ header .app-subtitle {
   margin: 0 10px;
 }
 
-.total-contributed {
-  font-size: 0.9rem;
-  color: #333;
-  margin: 15px 0;
-  z-index: 1;
-}
-
-.loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 8px dashed #f50db4;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.network-error-container {
-  background-color: #ffdddd;
-  border-left: 6px solid #f44336;
-  padding: 20px;
-  margin: 20px auto;
-  border-radius: 5px;
-  width: 80%;
-  max-width: 500px;
-  z-index: 1;
-}
-
-.network-error-message {
-  color: #a94442;
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-}
-
-.switch-network-btn {
-  background-color: #f44336;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease, transform 0.2s;
-}
-
-.switch-network-btn:hover {
-  background-color: #d32f2f;
-  transform: scale(1.05);
-}
-
+/* Account Information */
 .account-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 10px 0 10px 0; 
+  margin: 10px 0;
   z-index: 1;
+}
+
+.connected-account {
+  background: linear-gradient(135deg, #7afdd6, #51e2f5);
+  padding: 5px 10px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+  font-size: 0.85rem;
+  word-break: break-all;
+  color: #333;
+  width: fit-content;
 }
 
 .change-wallet-btn {
   background-color: #f50db4;
   color: white;
-  font-size: 0.7rem; 
-  padding: 4px 10px;
+  font-size: 0.9rem;
+  padding: 8px 20px;
   border: none;
   border-radius: 20px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s;
-  margin-bottom: 5px;
-  margin-top: -7px;
+  margin-top: -5px;
   position: relative;
-  width: 100px; 
 }
 
 .change-wallet-btn:hover {
@@ -173,66 +137,32 @@ header .app-subtitle {
   transform: scale(1.05);
 }
 
-.connected-account {
-  background: linear-gradient(135deg, #7afdd6, #51e2f5);
-  padding: 5px 5px;
-  border-radius: 15px;
-  margin-bottom: 10px;
-  margin-top: -15px;
-  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
-  font-size: 0.65rem;
-  word-break: break-all;
-  color: #333;
-  width: 120px;
-}
-
-.faucet-balance {
-  font-size: 0.9rem;
-  color: #333;
-  margin-top: 1px;
-}
-
-.success-message, .error-message {
-  text-align: center;
-  margin: 10px auto;
-  font-weight: bold;
-  position: relative;
+.connect-wallet-btn {
+  background-color: #f50db4;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease, transform 0.2s;
+  margin-top: 20px;
   z-index: 1;
-  font-size: 1rem;
-  max-width: 300px;
 }
 
-.success-message {
-  color: #28a745;
-  background-color: rgba(40, 167, 69, 0.1);
-  padding: 10px;
-  border-radius: 5px;
-  display: block;
-  animation: fadeInOut 7s ease-in-out forwards;
+.connect-wallet-btn:hover {
+  background-color: #e019a0;
+  transform: scale(1.05);
 }
 
-.error-message {
-  color: #dc3545;
-  background-color: rgba(220, 53, 69, 0.1);
-  padding: 10px;
-  border-radius: 5px;
-  display: block;
-  animation: fadeOut 5s ease-in-out forwards;
+.connect-wallet-btn .button-logo {
+  width: 30px;
+  height: auto;
+  vertical-align: middle;
+  margin-right: 10px;
 }
 
-@keyframes fadeOut {
-  0% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@keyframes fadeInOut {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
+/* Buttons */
 button {
   background-color: #f50db4;
   color: white;
@@ -258,6 +188,7 @@ button:disabled {
   transform: none;
 }
 
+/* Claim Button */
 .claim-btn {
   background-color: #f50db4;
   color: white;
@@ -269,9 +200,10 @@ button:disabled {
   transition: background-color 0.3s ease, transform 0.2s;
   margin: 35px 0;
   position: relative;
-  z-index: 1; 
+  z-index: 1;
 }
 
+/* Contribute Section */
 .contribute-section {
   display: flex;
   flex-direction: column;
@@ -297,6 +229,11 @@ button:disabled {
   outline: none;
 }
 
+.contribute-input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
 .contribute-btn {
   position: relative;
   cursor: pointer;
@@ -309,12 +246,12 @@ button:disabled {
   color: #fff;
   text-align: center;
   border-radius: 6px;
-  padding: 5px 0;
+  padding: 5px 10px;
   position: absolute;
   z-index: 1;
-  bottom: -70%;
+  bottom: -80%;
   left: 50%;
-  margin-left: -90px;
+  transform: translateX(-50%);
   opacity: 0;
   transition: opacity 0.3s;
   font-size: 0.8rem;
@@ -336,11 +273,11 @@ button:disabled {
   opacity: 1;
 }
 
+/* CAPTCHA Container */
 .captcha-container {
   display: flex;
   justify-content: center;
-  margin: -20px 0;
-  margin-bottom: -30px;
+  margin: -20px 0 -30px 0;
   z-index: 1;
 }
 
@@ -387,21 +324,14 @@ button:disabled {
   }
 
   .connected-account {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     padding: 4px 8px;
-    width: 130px;
   }
 
   .change-wallet-btn {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    width: 130px;
-  }
-
-  .faucet-balance {
     font-size: 0.8rem;
-    margin-top: 5px; 
-  } 
+    padding: 6px 15px;
+  }
 
   .success-message, .error-message {
     font-size: 0.9rem;
@@ -416,17 +346,9 @@ button:disabled {
     font-size: 0.9rem;
   }
 
-  .switch-network-btn {
+  .add-switch-network-btn {
     padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-
-  .task-message {
-    font-size: 1rem;
-  }
-
-  .twitter-confirmation {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .captcha-container iframe {
@@ -434,6 +356,49 @@ button:disabled {
   }
 }
 
+/* Messages */
+.success-message, .error-message {
+  text-align: center;
+  margin: 10px auto;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
+  font-size: 1rem;
+  max-width: 300px;
+}
+
+.success-message {
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  display: block;
+  animation: fadeInOut 7s ease-in-out forwards;
+}
+
+.error-message {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  display: block;
+  animation: fadeOut 5s ease-in-out forwards;
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Cooldown Timer */
 .cooldown-timer, .no-cooldown-message {
   text-align: center;
   font-size: 1rem;
@@ -446,12 +411,14 @@ button:disabled {
   color: #28a745;
 }
 
+/* Claims Tracker */
 .claims-tracker {
   font-size: 1rem;
   margin: 10px 0;
   color: #333;
 }
 
+/* Task Container */
 .new-task {
   background-color: rgba(255, 255, 255, 0.9);
   border: 2px dashed #f50db4;
@@ -472,10 +439,11 @@ button:disabled {
 
 .twitter-confirmation input[type="checkbox"] {
   margin-right: 10px;
-  transform: scale(1.5);
+  transform: scale(1.2);
   cursor: pointer;
 }
 
+/* Social Share Buttons */
 .social-share {
   margin-top: 20px;
   z-index: 1;
@@ -513,31 +481,7 @@ button:disabled {
   filter: invert(1) drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.25));
 }
 
-.connect-wallet-btn {
-  background-color: #f50db4;
-  color: white;
-  padding: 15px 30px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: background-color 0.3s ease, transform 0.2s;
-  margin-top: 50px;
-  z-index: 1;
-}
-
-.connect-wallet-btn:hover {
-  background-color: #e019a0;
-  transform: scale(1.05);
-}
-
-.connect-wallet-btn .button-logo {
-  width: 30px;
-  height: auto;
-  vertical-align: middle;
-  margin-right: 10px;
-}
-
+/* Progress Bar */
 .progress-bar-container {
   width: 80%;
   height: 10px;
@@ -562,6 +506,7 @@ button:disabled {
   100% { width: 100%; }
 }
 
+/* Animations */
 .animation-container {
   position: fixed;
   top: 0;
@@ -580,7 +525,8 @@ button:disabled {
   background-color: #f50db4;
   opacity: 0;
   transform: translateY(0) rotate(0deg);
-  animation: confetti-fall 1.5s ease-out forwards;
+  animation-timing-function: linear;
+  animation-name: confetti-fall;
 }
 
 .confetti-piece:nth-child(odd) {
@@ -615,4 +561,68 @@ button:disabled {
   80% { transform: translate(-1px, -1px) rotate(1deg); }
   90% { transform: translate(1px, 2px) rotate(0deg); }
   100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 8px dashed #f50db4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Network Error Container */
+.network-error-container {
+  background-color: #ffdddd;
+  border-left: 6px solid #f44336;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 5px;
+  width: 80%;
+  max-width: 500px;
+  z-index: 1;
+}
+
+.network-error-message {
+  color: #a94442;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+/* Add/Switch Network Button */
+.add-switch-network-btn {
+  padding: 10px 20px;
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.2s;
+  margin-top: 10px;
+}
+
+.add-switch-network-btn:hover {
+  background-color: #5751d9;
+  transform: scale(1.05);
+}
+
+.add-switch-network-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Faucet Balance */
+.faucet-balance {
+  font-size: 0.9rem;
+  color: #333;
+  margin-top: 10px;
 }

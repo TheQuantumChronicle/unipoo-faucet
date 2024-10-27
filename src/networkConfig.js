@@ -4,13 +4,13 @@ const NETWORK_CONFIG = {
     UNICHAIN_SEPOLIA: {
         chainId: 1301,
         chainName: 'Unichain Sepolia Testnet',
-        rpcUrls: ['https://rpc.sepolia.org/'], 
+        rpcUrls: [process.env.REACT_APP_RPC_URL], // Use Alchemy RPC URL from .env
         nativeCurrency: {
             name: 'Ethereum',
             symbol: 'ETH',
             decimals: 18,
         },
-        blockExplorerUrls: ['https://sepolia.uniscan.xyz/'],
+        blockExplorerUrls: [process.env.REACT_APP_BLOCK_EXPLORER_URL],
         contractAddress: process.env.REACT_APP_CONTRACT_ADDRESS,
     },
 };
