@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -28,9 +27,8 @@ function App() {
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
 
-  // **New State Variables for Balance Checking**
   const [userBalance, setUserBalance] = useState('0');
-  const MIN_BALANCE = 0.0099; // Minimum balance required in ETH
+  const MIN_BALANCE = 0.0099; 
 
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
   const rpcUrl = process.env.REACT_APP_RPC_URL;
@@ -40,7 +38,7 @@ function App() {
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
   const cooldownDuration = 86400;
-  const TARGET_CHAIN_ID = 1301; // Define as a constant for clarity
+  const TARGET_CHAIN_ID = 1301; 
 
   const shortenAddress = (address) => {
     if (!address) return '';
@@ -63,13 +61,13 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
-  // **Function to Fetch User Balance**
+ 
   const fetchUserBalance = async () => {
     if (provider && account) {
       try {
         const balance = await provider.getBalance(account);
         const formattedBalance = parseFloat(ethers.utils.formatEther(balance));
-        setUserBalance(formattedBalance.toFixed(4)); // Keeping 4 decimal places
+        setUserBalance(formattedBalance.toFixed(4)); 
       } catch (error) {
         console.error('Failed to fetch balance:', error);
         setErrorMessageWithTimeout('Failed to fetch wallet balance.');
@@ -97,7 +95,7 @@ function App() {
               setContract(_contract);
               setNetworkError(false);
               setErrorMessage(null);
-              fetchUserBalance(); // Fetch balance upon successful connection
+              fetchUserBalance(); 
             } else {
               setNetworkError(true);
               setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
@@ -146,7 +144,7 @@ function App() {
             setCurrentTask(1);
           }
 
-          fetchUserBalance(); // Update balance if user data changes
+          fetchUserBalance(); 
         } catch (error) {
           setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
         }
@@ -171,7 +169,7 @@ function App() {
       });
       setNetworkError(false);
       setErrorMessage(null);
-      fetchUserBalance(); // Update balance after switching network
+      fetchUserBalance(); 
     } catch (error) {
       if (error.code === 4902) {
         try {
@@ -193,7 +191,7 @@ function App() {
           });
           setNetworkError(false);
           setErrorMessage(null);
-          fetchUserBalance(); // Update balance after adding network
+          fetchUserBalance(); 
         } catch (addError) {
           setErrorMessageWithTimeout('Failed to add the Unichain Sepolia network.');
         }
@@ -220,7 +218,7 @@ function App() {
           setContract(_contract);
           setNetworkError(false);
           setErrorMessage(null);
-          fetchUserBalance(); // Fetch balance upon successful connection
+          fetchUserBalance(); 
         } else {
           setNetworkError(true);
           setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
@@ -265,7 +263,6 @@ function App() {
       };
 
       const handleChainChanged = (chainId) => {
-        // Handle the chain change without reloading
         if (parseInt(chainId, 16) === TARGET_CHAIN_ID) {
           setNetworkError(false);
           setErrorMessage(null);
@@ -346,7 +343,7 @@ function App() {
       const totalContributedWei = userData.totalContributed;
       const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
       setTotalContributed(totalContributedEth);
-      fetchUserBalance(); // Refresh balance after contribution
+      fetchUserBalance(); 
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Contribution failed: ${errorMsg}`);
@@ -400,7 +397,7 @@ function App() {
       const events = await contract.queryFilter(filter, 0, 'latest');
       const claimsCount = events.length;
       setClaimedTimes(claimsCount);
-      fetchUserBalance(); // Refresh balance after claiming
+      fetchUserBalance(); 
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
@@ -472,7 +469,6 @@ function App() {
                 <div className="account-details">
                   <p className="connected-account">
                     🌈 {shortenAddress(account)}
-                    {/* Whitelisted Badge */}
                     {isWhitelisted && (
                       <span className="whitelist-badge" title="Whitelisted User"></span>
                     )}
@@ -489,10 +485,9 @@ function App() {
               )}
             </div>
 
-            {/* **Balance Warning Message** */}
             {account && parseFloat(userBalance) < MIN_BALANCE && (
               <div className="balance-warning">
-                ⚠️ Your Sepolia ETH balance is below 0.0099 ETH. Please obtain more Sepolia ETH to cover gas fees before making daily claims and contributions.
+                ⚠️ Your Unichain Sepolia ETH balance is below 0.0099 ETH. Please get Unichain Sepolia ETH to cover minimal gas fees before making daily claims and contributions.
               </div>
             )}
 

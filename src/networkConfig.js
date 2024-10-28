@@ -1,10 +1,8 @@
-// src/networkConfig.js
-
 const NETWORK_CONFIG = {
     UNICHAIN_SEPOLIA: {
         chainId: 1301,
         chainName: 'Unichain Sepolia Testnet',
-        rpcUrls: [process.env.REACT_APP_RPC_URL], // Use Alchemy RPC URL from .env
+        rpcUrls: [process.env.REACT_APP_RPC_URL],
         nativeCurrency: {
             name: 'Ethereum',
             symbol: 'ETH',
