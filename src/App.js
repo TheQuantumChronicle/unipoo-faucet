@@ -1,10 +1,11 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import FaucetBalance from './components/FaucetBalance';
 import Background from './components/Background';
-import contractABI from './contractABI.json';
 import './App.css';
+import contractABI from './contractABI.json';
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -26,8 +27,8 @@ function App() {
   const [currentTask, setCurrentTask] = useState(1);
   const [twitterConfirmed, setTwitterConfirmed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
-
   const [userBalance, setUserBalance] = useState('0');
+  const [showShareNotification, setShowShareNotification] = useState(false);
   const MIN_BALANCE = 0.0099; 
 
   const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
@@ -61,7 +62,6 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
- 
   const fetchUserBalance = async () => {
     if (provider && account) {
       try {
@@ -397,7 +397,9 @@ function App() {
       const events = await contract.queryFilter(filter, 0, 'latest');
       const claimsCount = events.length;
       setClaimedTimes(claimsCount);
-      fetchUserBalance(); 
+      fetchUserBalance();
+
+      setShowShareNotification(true);
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
@@ -442,6 +444,13 @@ function App() {
         setAnimationClass('');
       }, 3000);
     }
+  };
+
+  const handleShareOnX = () => {
+    const tweetText = `Did You Get Your Daily Rainbow-Filled? 🌈 🦄 💩\nI've filled my rainbow ${claimedTimes} times \n@unipoofaucet`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    window.open(twitterUrl, '_blank');
+    setShowShareNotification(false);
   };
 
   return (
@@ -569,7 +578,6 @@ function App() {
                   }
                 >
                   {isContributing ? 'Contributing...' : '✨ Contribute 💸'}
-                  {/* **Tooltip Text** */}
                   <span className="tooltip-text">
                     Users need Unichain Sepolia ETH in their wallet to begin contributing/claiming. Contribute 0.01e or more to get whitelisted and begin claiming your daily rainbow-filled 🦄 💩 
                   </span>
@@ -601,7 +609,9 @@ function App() {
                       <p>
                         For the final task, follow us on X (Twitter) and make a post saying:
                       </p>
-                      <p>"I got my daily rainbow-filled at @UniPooFaucet 🦄 🌈💩"</p>
+                      <p>"Did You Get Your Daily Rainbow-Filled? 🌈 🦄 💩
+                      I've filled my rainbow {claimedTimes} times 
+                      @unipoofaucet"</p>
                       <a href={twitterProfileUrl} target="_blank" rel="noopener noreferrer">
                         Follow us on X
                       </a>
@@ -694,6 +704,24 @@ function App() {
               </button>
             </div>
           )}
+
+          {showShareNotification && (
+            <div className="share-notification">
+              <div className="notification-content">
+                <h3>🎉 Boost Your Airdrop!</h3>
+                <p>Share on X for more rainbow-fills 🌈</p>
+                <button onClick={handleShareOnX} className="share-button">
+                  Share on X
+                </button>
+                <button onClick={() => setShowShareNotification(false)} className="close-button">
+                  ✖️
+                </button>
+                <p className="hint-text">
+                  Sharing your claim can enhance your standing for future airdrops! 🚀
+                </p>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -701,4 +729,3 @@ function App() {
 }
 
 export default App;
-//one love

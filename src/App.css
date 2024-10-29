@@ -1,3 +1,4 @@
+/* App.css */
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
 
 * {
@@ -666,4 +667,54 @@ button:disabled {
 
 .contribute-btn .tooltip-text {
   z-index: 1000;
+}
+
+.share-notification {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #ff69b4;
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 1000;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.notification-content {
+  text-align: center;
+}
+
+.share-button {
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 10px 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.share-button:hover {
+  background-color: #0d8ddb;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.hint-text {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #555;
 }
