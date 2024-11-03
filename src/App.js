@@ -38,16 +38,14 @@ function App() {
   const twitterProfileUrl = process.env.REACT_APP_TWITTER_PROFILE_URL;
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
-  const cooldownDuration = 60; // 1 day in seconds
+  const cooldownDuration = 86400;
   const TARGET_CHAIN_ID = 1301; 
 
-  // Function to shorten Ethereum addresses for display
   const shortenAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Function to display error messages temporarily
   const setErrorMessageWithTimeout = (message) => {
     setErrorMessage(message);
     setTimeout(() => {
@@ -55,7 +53,6 @@ function App() {
     }, 5000);
   };
 
-  // Function to calculate remaining cooldown time
   const calculateRemainingTime = (lastClaimTime) => {
     if (lastClaimTime === 0) {
       return 0;
@@ -65,7 +62,6 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
-  // Function to fetch and update user balance
   const fetchUserBalance = async () => {
     if (provider && account) {
       try {
@@ -79,7 +75,6 @@ function App() {
     }
   };
 
-  // Effect to check if wallet is connected on initial load
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
@@ -101,18 +96,22 @@ function App() {
               setNetworkError(false);
               setErrorMessage(null);
               fetchUserBalance(); 
+              console.log('Connected to contract:', _contract.address);
             } else {
               setNetworkError(true);
               setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+              console.log('Incorrect network. Please switch to Unichain Sepolia Testnet.');
             }
           }
         } catch (error) {
           setErrorMessageWithTimeout('Failed to load blockchain data.');
           setNetworkError(true);
+          console.error('Error loading blockchain data:', error);
         }
       } else {
         setErrorMessageWithTimeout('MetaMask is not installed. Please install it to use this app.');
         setNetworkError(true);
+        console.log('MetaMask is not installed.');
       }
       setIsLoading(false);
     };
@@ -120,7 +119,6 @@ function App() {
     checkIfWalletConnected();
   }, [contractAddress, TARGET_CHAIN_ID]);
 
-  // Effect to fetch and update user data whenever contract or account changes
   useEffect(() => {
     const checkUserData = async () => {
       if (contract && account) {
@@ -131,7 +129,6 @@ function App() {
           setRemainingTime(remaining);
           setIsWhitelisted(user.isWhitelisted);
 
-          // Fetch all Withdraw events for the user to determine claim count
           const filter = contract.filters.Withdraw(account);
           const events = await contract.queryFilter(filter, 0, 'latest');
           const claimsCount = events.length;
@@ -141,7 +138,6 @@ function App() {
           const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
           setTotalContributed(totalContributedEth);
 
-          // Update current task based on claims and contributions
           if (claimsCount >= 7) {
             if (parseFloat(totalContributedEth) >= 0.1) {
               setCurrentTask(3);
@@ -153,8 +149,10 @@ function App() {
           }
 
           fetchUserBalance(); 
+          console.log(`User Data: Claims - ${claimsCount}, Total Contributed - ${totalContributedEth} ETH`);
         } catch (error) {
           setErrorMessageWithTimeout('Failed to fetch user data. Please try again.');
+          console.error('Error fetching user data:', error);
         }
       }
     };
@@ -162,7 +160,6 @@ function App() {
     checkUserData();
   }, [contract, account]);
 
-  // Function to switch to Unichain Sepolia Testnet
   const switchToUnichainSepolia = async () => {
     if (!window.ethereum) {
       setErrorMessageWithTimeout('MetaMask is not installed. Please install it to switch networks.');
@@ -179,6 +176,7 @@ function App() {
       setNetworkError(false);
       setErrorMessage(null);
       fetchUserBalance(); 
+      console.log('Switched to Unichain Sepolia Testnet.');
     } catch (error) {
       if (error.code === 4902) {
         try {
@@ -201,16 +199,18 @@ function App() {
           setNetworkError(false);
           setErrorMessage(null);
           fetchUserBalance(); 
+          console.log('Added and switched to Unichain Sepolia Testnet.');
         } catch (addError) {
           setErrorMessageWithTimeout('Failed to add the Unichain Sepolia network.');
+          console.error('Error adding network:', addError);
         }
       } else {
         setErrorMessageWithTimeout('Failed to switch to the Unichain Sepolia network.');
+        console.error('Error switching network:', error);
       }
     }
   };
 
-  // Function to connect wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
@@ -229,19 +229,22 @@ function App() {
           setNetworkError(false);
           setErrorMessage(null);
           fetchUserBalance(); 
+          console.log('Wallet connected:', address);
         } else {
           setNetworkError(true);
           setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+          console.log('Incorrect network. Please switch to Unichain Sepolia Testnet.');
         }
       } catch (error) {
         setErrorMessageWithTimeout('Failed to connect wallet. Please try again.');
+        console.error('Error connecting wallet:', error);
       }
     } else {
       setErrorMessageWithTimeout('Please install MetaMask!');
+      console.log('MetaMask is not installed.');
     }
   };
 
-  // Function to handle wallet changes
   const handleChangeWallet = async () => {
     if (window.ethereum) {
       try {
@@ -250,27 +253,31 @@ function App() {
           params: [{ eth_accounts: {} }],
         });
         await connectWallet();
+        console.log('Wallet changed.');
       } catch (error) {
         setErrorMessageWithTimeout('Failed to change wallet.');
+        console.error('Error changing wallet:', error);
       }
     } else {
       setErrorMessageWithTimeout('Please install MetaMask!');
+      console.log('MetaMask is not installed.');
     }
   };
 
-  // Effect to handle account and chain changes
   useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           connectWallet();
+          console.log('Account changed:', accounts[0]);
         } else {
           setAccount(null);
           setContract(null);
           setProvider(null);
           setNetworkError(true);
           setErrorMessageWithTimeout('Please connect to MetaMask.');
+          console.log('Disconnected from MetaMask.');
         }
       };
 
@@ -279,9 +286,11 @@ function App() {
           setNetworkError(false);
           setErrorMessage(null);
           connectWallet();
+          console.log('Chain changed to Unichain Sepolia Testnet.');
         } else {
           setNetworkError(true);
           setErrorMessageWithTimeout('Please switch to the Unichain Sepolia Testnet.');
+          console.log('Incorrect network:', chainId);
         }
       };
 
@@ -292,12 +301,12 @@ function App() {
         if (window.ethereum.removeListener) {
           window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
           window.ethereum.removeListener('chainChanged', handleChainChanged);
+          console.log('Removed MetaMask event listeners.');
         }
       };
     }
   }, [TARGET_CHAIN_ID]);
 
-  // Effect to handle cooldown timer
   useEffect(() => {
     if (remainingTime > 0) {
       const interval = setInterval(() => {
@@ -314,14 +323,13 @@ function App() {
     }
   }, [remainingTime]);
 
-  // Effect to handle task progression based on Twitter confirmation
   useEffect(() => {
     if (currentTask === 3 && twitterConfirmed) {
       setCurrentTask(4);
+      console.log('All tasks completed.');
     }
   }, [twitterConfirmed, currentTask]);
 
-  // Function to handle contributions to the faucet
   const contributeToFaucet = async () => {
     setErrorMessage(null);
     setSuccessMessageContribute(null);
@@ -339,10 +347,12 @@ function App() {
       if (!user.isWhitelisted && parsedAmount.lt(ethers.utils.parseEther('0.01'))) {
         setErrorMessageWithTimeout('You must contribute at least 0.01 ETH to be whitelisted.');
         setIsContributing(false);
+        console.log('Contribution below initial minimum.');
         return;
       } else if (user.isWhitelisted && parsedAmount.lt(ethers.utils.parseEther('0.01'))) {
         setErrorMessageWithTimeout('You must contribute at least 0.01 ETH.');
         setIsContributing(false);
+        console.log('Contribution below minimum for whitelisted user.');
         return;
       }
 
@@ -359,16 +369,17 @@ function App() {
       const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
       setTotalContributed(totalContributedEth);
       fetchUserBalance(); 
+      console.log(`User contributed: ${parsedAmount} ETH`);
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Contribution failed: ${errorMsg}`);
       triggerFailureAnimation();
+      console.error('Error during contribution:', error);
     } finally {
       setIsContributing(false);
     }
   };
 
-  // Function to handle ETH claims from the faucet
   const claimETH = async () => {
     setErrorMessage(null);
     setSuccessMessageClaim(null);
@@ -376,21 +387,25 @@ function App() {
 
     if (!isWhitelisted) {
       setErrorMessageWithTimeout('🔒 You need to be whitelisted to claim.');
+      console.log('User is not whitelisted.');
       return;
     }
 
     if (remainingTime > 0) {
       setErrorMessageWithTimeout('⏳ Claim is on cooldown. Please wait.');
+      console.log('Claim is on cooldown.');
       return;
     }
 
     if (!captchaToken) {
       setErrorMessageWithTimeout('Please complete the hCaptcha.');
+      console.log('hCaptcha not completed.');
       return;
     }
 
     if (parseFloat(userBalance) < MIN_BALANCE) {
       setErrorMessageWithTimeout('⚠️ Insufficient Sepolia ETH to cover gas fees. Please obtain more ETH.');
+      console.log('Insufficient ETH balance.');
       return;
     }
 
@@ -401,16 +416,15 @@ function App() {
 
       setSuccessMessageClaim('💸 Claim successful!');
       triggerSuccessAnimation();
+      console.log('Claim successful.');
 
       setCaptchaToken('');
 
-      // Fetch updated user data after claim
       const user = await contract.users(account);
       const lastClaimTime = Number(user.lastClaimTime);
       const remaining = calculateRemainingTime(lastClaimTime);
       setRemainingTime(remaining);
 
-      // Fetch updated Withdraw events to get the new claims count
       const filter = contract.filters.Withdraw(account);
       const events = await contract.queryFilter(filter, 0, 'latest');
       const claimsCount = events.length;
@@ -418,16 +432,17 @@ function App() {
       fetchUserBalance();
 
       setShowShareNotification(true);
+      console.log(`Total claims after withdrawal: ${claimsCount}`);
     } catch (error) {
       const errorMsg = error.reason || error.message || 'Transaction failed.';
       setErrorMessageWithTimeout(`❌ Claim failed: ${errorMsg}`);
       triggerFailureAnimation();
+      console.error('Error during claim:', error);
     } finally {
       setIsClaiming(false);
     }
   };
 
-  // Handler for contribution amount input
   const handleContributeAmountChange = (e) => {
     const value = e.target.value;
     if (/^\d*\.?\d{0,4}$/.test(value)) {
@@ -435,26 +450,29 @@ function App() {
     }
   };
 
-  // Handlers for hCaptcha
   const handleCaptchaVerify = (token) => {
     setCaptchaToken(token);
+    console.log('hCaptcha verified:', token);
   };
 
   const handleCaptchaExpire = () => {
     setCaptchaToken('');
+    console.log('hCaptcha expired.');
   };
 
   const handleCaptchaError = (err) => {
     setErrorMessageWithTimeout('hCaptcha failed to load. Please refresh the page.');
+    console.error('hCaptcha error:', err);
   };
 
-  // Functions to trigger animations
+
   const triggerSuccessAnimation = () => {
     if (animationClass !== 'success-animation') {
       setAnimationClass('success-animation');
       setTimeout(() => {
         setAnimationClass('');
       }, 5000);
+      console.log('Triggered success animation.');
     }
   };
 
@@ -464,15 +482,16 @@ function App() {
       setTimeout(() => {
         setAnimationClass('');
       }, 3000);
+      console.log('Triggered failure animation.');
     }
   };
 
-  // Function to handle sharing on X (Twitter)
   const handleShareOnX = () => {
     const tweetText = `Did You Get Your Daily Rainbow-Filled? 🌈 🦄 💩\nI've filled my rainbow ${claimedTimes} times \n@unipoofaucet`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
     window.open(twitterUrl, '_blank');
     setShowShareNotification(false);
+    console.log('User shared on X:', twitterUrl);
   };
 
   return (
@@ -622,7 +641,7 @@ function App() {
                   {currentTask === 2 && (
                     <div>
                       <p>🎉 You've reached 7 claims!</p>
-                      <p>Next, contribute at least 0.1 ETH to unlock the final task.</p>
+                      <p>Next, contribute at least 0.1 ETH </p>
                     </div>
                   )}
                   {currentTask === 3 && (
