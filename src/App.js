@@ -38,14 +38,16 @@ function App() {
   const twitterProfileUrl = process.env.REACT_APP_TWITTER_PROFILE_URL;
   const xProfileUrl = process.env.REACT_APP_X_PROFILE_URL;
   const unichainWebsiteUrl = process.env.REACT_APP_UNICHAIN_WEBSITE_URL;
-  const cooldownDuration = 86400;
+  const cooldownDuration = 60; // 1 day in seconds
   const TARGET_CHAIN_ID = 1301; 
 
+  // Function to shorten Ethereum addresses for display
   const shortenAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
+  // Function to display error messages temporarily
   const setErrorMessageWithTimeout = (message) => {
     setErrorMessage(message);
     setTimeout(() => {
@@ -53,6 +55,7 @@ function App() {
     }, 5000);
   };
 
+  // Function to calculate remaining cooldown time
   const calculateRemainingTime = (lastClaimTime) => {
     if (lastClaimTime === 0) {
       return 0;
@@ -62,6 +65,7 @@ function App() {
     return remaining > 0 ? remaining : 0;
   };
 
+  // Function to fetch and update user balance
   const fetchUserBalance = async () => {
     if (provider && account) {
       try {
@@ -75,6 +79,7 @@ function App() {
     }
   };
 
+  // Effect to check if wallet is connected on initial load
   useEffect(() => {
     const checkIfWalletConnected = async () => {
       if (window.ethereum) {
@@ -115,6 +120,7 @@ function App() {
     checkIfWalletConnected();
   }, [contractAddress, TARGET_CHAIN_ID]);
 
+  // Effect to fetch and update user data whenever contract or account changes
   useEffect(() => {
     const checkUserData = async () => {
       if (contract && account) {
@@ -125,6 +131,7 @@ function App() {
           setRemainingTime(remaining);
           setIsWhitelisted(user.isWhitelisted);
 
+          // Fetch all Withdraw events for the user to determine claim count
           const filter = contract.filters.Withdraw(account);
           const events = await contract.queryFilter(filter, 0, 'latest');
           const claimsCount = events.length;
@@ -134,6 +141,7 @@ function App() {
           const totalContributedEth = ethers.utils.formatEther(totalContributedWei);
           setTotalContributed(totalContributedEth);
 
+          // Update current task based on claims and contributions
           if (claimsCount >= 7) {
             if (parseFloat(totalContributedEth) >= 0.1) {
               setCurrentTask(3);
@@ -154,6 +162,7 @@ function App() {
     checkUserData();
   }, [contract, account]);
 
+  // Function to switch to Unichain Sepolia Testnet
   const switchToUnichainSepolia = async () => {
     if (!window.ethereum) {
       setErrorMessageWithTimeout('MetaMask is not installed. Please install it to switch networks.');
@@ -201,6 +210,7 @@ function App() {
     }
   };
 
+  // Function to connect wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
@@ -231,6 +241,7 @@ function App() {
     }
   };
 
+  // Function to handle wallet changes
   const handleChangeWallet = async () => {
     if (window.ethereum) {
       try {
@@ -247,6 +258,7 @@ function App() {
     }
   };
 
+  // Effect to handle account and chain changes
   useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
@@ -285,6 +297,7 @@ function App() {
     }
   }, [TARGET_CHAIN_ID]);
 
+  // Effect to handle cooldown timer
   useEffect(() => {
     if (remainingTime > 0) {
       const interval = setInterval(() => {
@@ -301,12 +314,14 @@ function App() {
     }
   }, [remainingTime]);
 
+  // Effect to handle task progression based on Twitter confirmation
   useEffect(() => {
     if (currentTask === 3 && twitterConfirmed) {
       setCurrentTask(4);
     }
   }, [twitterConfirmed, currentTask]);
 
+  // Function to handle contributions to the faucet
   const contributeToFaucet = async () => {
     setErrorMessage(null);
     setSuccessMessageContribute(null);
@@ -353,6 +368,7 @@ function App() {
     }
   };
 
+  // Function to handle ETH claims from the faucet
   const claimETH = async () => {
     setErrorMessage(null);
     setSuccessMessageClaim(null);
@@ -373,7 +389,7 @@ function App() {
       return;
     }
 
-    if (userBalance < MIN_BALANCE) {
+    if (parseFloat(userBalance) < MIN_BALANCE) {
       setErrorMessageWithTimeout('⚠️ Insufficient Sepolia ETH to cover gas fees. Please obtain more ETH.');
       return;
     }
@@ -388,11 +404,13 @@ function App() {
 
       setCaptchaToken('');
 
+      // Fetch updated user data after claim
       const user = await contract.users(account);
       const lastClaimTime = Number(user.lastClaimTime);
       const remaining = calculateRemainingTime(lastClaimTime);
       setRemainingTime(remaining);
 
+      // Fetch updated Withdraw events to get the new claims count
       const filter = contract.filters.Withdraw(account);
       const events = await contract.queryFilter(filter, 0, 'latest');
       const claimsCount = events.length;
@@ -409,6 +427,7 @@ function App() {
     }
   };
 
+  // Handler for contribution amount input
   const handleContributeAmountChange = (e) => {
     const value = e.target.value;
     if (/^\d*\.?\d{0,4}$/.test(value)) {
@@ -416,6 +435,7 @@ function App() {
     }
   };
 
+  // Handlers for hCaptcha
   const handleCaptchaVerify = (token) => {
     setCaptchaToken(token);
   };
@@ -428,6 +448,7 @@ function App() {
     setErrorMessageWithTimeout('hCaptcha failed to load. Please refresh the page.');
   };
 
+  // Functions to trigger animations
   const triggerSuccessAnimation = () => {
     if (animationClass !== 'success-animation') {
       setAnimationClass('success-animation');
@@ -446,6 +467,7 @@ function App() {
     }
   };
 
+  // Function to handle sharing on X (Twitter)
   const handleShareOnX = () => {
     const tweetText = `Did You Get Your Daily Rainbow-Filled? 🌈 🦄 💩\nI've filled my rainbow ${claimedTimes} times \n@unipoofaucet`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
@@ -607,7 +629,7 @@ function App() {
                     <div>
                       <p>🎉 Great job!</p>
                       <p>
-                        For the final task, follow us on X (Twitter) and make a post saying:
+                        To advance, make an X post saying:
                       </p>
                       <p>"Did You Get Your Daily Rainbow-Filled? 🌈 🦄 💩
                       I've filled my rainbow {claimedTimes} times 
